@@ -1,10 +1,10 @@
-This is XeTeX, Version 3.141592653-2.6-0.999993 (TeX Live 2021/W32TeX) (preloaded format=xelatex 2021.10.5)  27 NOV 2021 19:56
+This is XeTeX, Version 3.141592653-2.6-0.999993 (TeX Live 2021/W32TeX) (preloaded format=xelatex 2021.10.5)  27 NOV 2021 21:24
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
  %&-line parsing enabled.
-**"d:/courses/Machine Learning/project/report/thesis"
-(d:/courses/Machine Learning/project/report/thesis.tex
+**d:/MLproject/MachineLearningCourseProject/report/thesis
+(d:/MLproject/MachineLearningCourseProject/report/thesis.tex
 LaTeX2e <2020-10-01> patch level 4
 L3 programming layer <2021-02-18> (d:/TexLive/2021/texmf-dist/tex/latex/ctex/ctexart.cls (d:/TexLive/2021/texmf-dist/tex/latex/ctex/config/ctexbackend.cfg
 File: ctexbackend.cfg 2021/03/14 v2.5.6 Backend configuration file (CTEX)
@@ -1220,6 +1220,9 @@ LaTeX Font Warning: Font shape `U/rsfs/m/n' in size <15.05624> not available
 \openout2 = `body/chapter1.aux'.
 
  (./body/chapter1.tex
+File: ./figure/chapter1/example.png Graphic file (type bmp)
+<./figure/chapter1/example.png>
+
 
 Package fontspec Warning: Font "FandolKai-Regular" does not contain requested
 (fontspec)                Script "CJK".
@@ -1398,12 +1401,12 @@ Package rerunfilecheck Info: File `thesis.out' has not changed.
 (rerunfilecheck)             Checksum: 7E3E97506E65E021AD21D561A7AFC603;5742.
  ) 
 Here is how much of TeX's memory you used:
- 33890 strings out of 476919
- 713523 string characters out of 5825424
- 1103404 words of memory out of 5000000
- 53146 multiletter control sequences out of 15000+600000
+ 33904 strings out of 476919
+ 713857 string characters out of 5825424
+ 1097443 words of memory out of 5000000
+ 53159 multiletter control sequences out of 15000+600000
  417226 words of font info for 112 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
- 101i,11n,107p,1233b,523s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 101i,11n,107p,1237b,521s stack positions out of 5000i,500n,10000p,200000b,80000s
 
 Output written on thesis.pdf (14 pages).
