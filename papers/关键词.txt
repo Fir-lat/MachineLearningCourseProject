@@ -1,0 +1,7 @@
+启发式
+遗传算法、进化策略
+模拟退火 Simulated Annealing
+self-organizing minimizer
+k plane clustering (kPC)
+No free lunch(NFL)
+k-means clustering
