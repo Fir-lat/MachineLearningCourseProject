@@ -1,28 +1,325 @@
 import numpy as np
-from scipy import optimize
+import pandas as pd
+import baostock as bs
+from pycallgraph import PyCallGraph
+from pycallgraph.output import GraphvizOutput
 import matplotlib.pyplot as plt
-from yabox.problems import Levy
+from simplePLR.__init__ import SimplePLR
+from PLR.__init__ import PLR
+from DifferentialEvolution.__init__ import DifferentialEvolution
 
 
-# This is a sample Python script.
+def simple_plr_tester1():
+    y = np.array([0.00000000e+00, 9.69801700e-03, 2.94350340e-02,
+                  4.39052750e-02, 5.45343950e-02, 6.74104940e-02,
+                  8.34831790e-02, 1.02580042e-01, 1.22767939e-01,
+                  1.42172312e-01, 0.00000000e+00, 8.58600000e-06,
+                  8.31543400e-03, 2.34184100e-02, 3.39709150e-02,
+                  4.03581990e-02, 4.53545600e-02, 5.02345260e-02,
+                  5.55253360e-02, 6.14750770e-02, 6.82125120e-02,
+                  7.55892510e-02, 8.38356810e-02, 9.26413070e-02,
+                  1.02039790e-01, 1.11688258e-01, 1.21390666e-01,
+                  1.31196948e-01, 0.00000000e+00, 1.56706510e-02,
+                  3.54628780e-02, 4.63739040e-02, 5.61442590e-02,
+                  6.78542550e-02, 8.16388310e-02, 9.77756110e-02,
+                  1.16531753e-01, 1.37038283e-01, 0.00000000e+00,
+                  1.16951050e-02, 3.12089850e-02, 4.41776550e-02,
+                  5.42877590e-02, 6.63321350e-02, 8.07655920e-02,
+                  9.70363280e-02, 1.15706975e-01, 1.36687642e-01,
+                  0.00000000e+00, 1.50144640e-02, 3.44519970e-02,
+                  4.55907760e-02, 5.59556700e-02, 6.88450940e-02,
+                  8.41374060e-02, 1.01254006e-01, 1.20605073e-01,
+                  1.41881288e-01, 1.62618058e-01])
+    x = np.array([0.00000000e+00, 8.82678000e-03, 3.25615100e-02,
+                  5.66106800e-02, 7.95549800e-02, 1.00936330e-01,
+                  1.20351520e-01, 1.37442010e-01, 1.51858250e-01,
+                  1.64433570e-01, 0.00000000e+00, -2.12600000e-05,
+                  7.03872000e-03, 1.85494500e-02, 3.00926700e-02,
+                  4.17617000e-02, 5.37279600e-02, 6.54941000e-02,
+                  7.68092100e-02, 8.76596300e-02, 9.80525800e-02,
+                  1.07961810e-01, 1.17305210e-01, 1.26063930e-01,
+                  1.34180360e-01, 1.41725010e-01, 1.48629710e-01,
+                  1.55374770e-01, 0.00000000e+00, 1.65610200e-02,
+                  3.91016100e-02, 6.18679400e-02, 8.30997400e-02,
+                  1.02132890e-01, 1.19011260e-01, 1.34620080e-01,
+                  1.49429370e-01, 1.63539960e-01, -0.00000000e+00,
+                  1.01980300e-02, 3.28642800e-02, 5.59461900e-02,
+                  7.81388400e-02, 9.84458400e-02, 1.16270210e-01,
+                  1.31279040e-01, 1.45437090e-01, 1.59627540e-01,
+                  0.00000000e+00, 1.63404300e-02, 4.00086000e-02,
+                  6.34390200e-02, 8.51085900e-02, 1.04787860e-01,
+                  1.22120350e-01, 1.36931660e-01, 1.50958760e-01,
+                  1.65299640e-01, 1.79942720e-01])
+    model = SimplePLR(x, y)
+    breakpoints = np.array([min(x), 0.039, 0.10, max(x)])
+    model.simple_plr_v1(breakpoints)
+    slopes = model.calculate_slopes()
+    se = model.standard_errors()
+    req = model.r_squared()
+    print('se=' + str(se))
+    print('req=' + str(req))
+    model.plot()
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 
-def f(x):
-    result = []
-    for i in range(len(x)):
-        result.append(np.random.randint(100))
-    return result
+def plr_tester1():
+    y = np.array([0.00000000e+00, 9.69801700e-03, 2.94350340e-02,
+                  4.39052750e-02, 5.45343950e-02, 6.74104940e-02,
+                  8.34831790e-02, 1.02580042e-01, 1.22767939e-01,
+                  1.42172312e-01, 0.00000000e+00, 8.58600000e-06,
+                  8.31543400e-03, 2.34184100e-02, 3.39709150e-02,
+                  4.03581990e-02, 4.53545600e-02, 5.02345260e-02,
+                  5.55253360e-02, 6.14750770e-02, 6.82125120e-02,
+                  7.55892510e-02, 8.38356810e-02, 9.26413070e-02,
+                  1.02039790e-01, 1.11688258e-01, 1.21390666e-01,
+                  1.31196948e-01, 0.00000000e+00, 1.56706510e-02,
+                  3.54628780e-02, 4.63739040e-02, 5.61442590e-02,
+                  6.78542550e-02, 8.16388310e-02, 9.77756110e-02,
+                  1.16531753e-01, 1.37038283e-01, 0.00000000e+00,
+                  1.16951050e-02, 3.12089850e-02, 4.41776550e-02,
+                  5.42877590e-02, 6.63321350e-02, 8.07655920e-02,
+                  9.70363280e-02, 1.15706975e-01, 1.36687642e-01,
+                  0.00000000e+00, 1.50144640e-02, 3.44519970e-02,
+                  4.55907760e-02, 5.59556700e-02, 6.88450940e-02,
+                  8.41374060e-02, 1.01254006e-01, 1.20605073e-01,
+                  1.41881288e-01, 1.62618058e-01])
+    x = np.array([0.00000000e+00, 8.82678000e-03, 3.25615100e-02,
+                  5.66106800e-02, 7.95549800e-02, 1.00936330e-01,
+                  1.20351520e-01, 1.37442010e-01, 1.51858250e-01,
+                  1.64433570e-01, 0.00000000e+00, -2.12600000e-05,
+                  7.03872000e-03, 1.85494500e-02, 3.00926700e-02,
+                  4.17617000e-02, 5.37279600e-02, 6.54941000e-02,
+                  7.68092100e-02, 8.76596300e-02, 9.80525800e-02,
+                  1.07961810e-01, 1.17305210e-01, 1.26063930e-01,
+                  1.34180360e-01, 1.41725010e-01, 1.48629710e-01,
+                  1.55374770e-01, 0.00000000e+00, 1.65610200e-02,
+                  3.91016100e-02, 6.18679400e-02, 8.30997400e-02,
+                  1.02132890e-01, 1.19011260e-01, 1.34620080e-01,
+                  1.49429370e-01, 1.63539960e-01, -0.00000000e+00,
+                  1.01980300e-02, 3.28642800e-02, 5.59461900e-02,
+                  7.81388400e-02, 9.84458400e-02, 1.16270210e-01,
+                  1.31279040e-01, 1.45437090e-01, 1.59627540e-01,
+                  0.00000000e+00, 1.63404300e-02, 4.00086000e-02,
+                  6.34390200e-02, 8.51085900e-02, 1.04787860e-01,
+                  1.22120350e-01, 1.36931660e-01, 1.50958760e-01,
+                  1.65299640e-01, 1.79942720e-01])
+    model = PLR(x, y)
+    model.fit(6)
+    slopes = model.calculate_slopes()
+    se = model.standard_errors()
+    req = model.r_squared()
+    print('se=' + str(se))
+    print('req=' + str(req))
+    model.plot()
 
 
-x = np.linspace(0, 10, 500)
-y = np.ceil(x) + np.random.normal(0, 1, 500)
-z = f(x)
-plt.scatter(x, z, s=1)
-plt.show()
+def plr_tester2():
+    y = np.array([0.00000000e+00, 9.69801700e-03, 2.94350340e-02,
+                  4.39052750e-02, 5.45343950e-02, 6.74104940e-02,
+                  8.34831790e-02, 1.02580042e-01, 1.22767939e-01,
+                  1.42172312e-01, 0.00000000e+00, 8.58600000e-06,
+                  8.31543400e-03, 2.34184100e-02, 3.39709150e-02,
+                  4.03581990e-02, 4.53545600e-02, 5.02345260e-02,
+                  5.55253360e-02, 6.14750770e-02, 6.82125120e-02,
+                  7.55892510e-02, 8.38356810e-02, 9.26413070e-02,
+                  1.02039790e-01, 1.11688258e-01, 1.21390666e-01,
+                  1.31196948e-01, 0.00000000e+00, 1.56706510e-02,
+                  3.54628780e-02, 4.63739040e-02, 5.61442590e-02,
+                  6.78542550e-02, 8.16388310e-02, 9.77756110e-02,
+                  1.16531753e-01, 1.37038283e-01, 0.00000000e+00,
+                  1.16951050e-02, 3.12089850e-02, 4.41776550e-02,
+                  5.42877590e-02, 6.63321350e-02, 8.07655920e-02,
+                  9.70363280e-02, 1.15706975e-01, 1.36687642e-01,
+                  0.00000000e+00, 1.50144640e-02, 3.44519970e-02,
+                  4.55907760e-02, 5.59556700e-02, 6.88450940e-02,
+                  8.41374060e-02, 1.01254006e-01, 1.20605073e-01,
+                  1.41881288e-01, 1.62618058e-01])
+    x = np.array([0.00000000e+00, 8.82678000e-03, 3.25615100e-02,
+                  5.66106800e-02, 7.95549800e-02, 1.00936330e-01,
+                  1.20351520e-01, 1.37442010e-01, 1.51858250e-01,
+                  1.64433570e-01, 0.00000000e+00, -2.12600000e-05,
+                  7.03872000e-03, 1.85494500e-02, 3.00926700e-02,
+                  4.17617000e-02, 5.37279600e-02, 6.54941000e-02,
+                  7.68092100e-02, 8.76596300e-02, 9.80525800e-02,
+                  1.07961810e-01, 1.17305210e-01, 1.26063930e-01,
+                  1.34180360e-01, 1.41725010e-01, 1.48629710e-01,
+                  1.55374770e-01, 0.00000000e+00, 1.65610200e-02,
+                  3.91016100e-02, 6.18679400e-02, 8.30997400e-02,
+                  1.02132890e-01, 1.19011260e-01, 1.34620080e-01,
+                  1.49429370e-01, 1.63539960e-01, -0.00000000e+00,
+                  1.01980300e-02, 3.28642800e-02, 5.59461900e-02,
+                  7.81388400e-02, 9.84458400e-02, 1.16270210e-01,
+                  1.31279040e-01, 1.45437090e-01, 1.59627540e-01,
+                  0.00000000e+00, 1.63404300e-02, 4.00086000e-02,
+                  6.34390200e-02, 8.51085900e-02, 1.04787860e-01,
+                  1.22120350e-01, 1.36931660e-01, 1.50958760e-01,
+                  1.65299640e-01, 1.79942720e-01])
+    model = PLR(x, y)
+    max_segment = 20
+    reqs = []
+    for i in range(2, max_segment):
+        model.fit(i)
+        reqs.append(model.r_squared())
+        model.plot()
+    plt.figure()
+    x_segment = np.arange(2, max_segment, 1)
+    reqs = np.array(reqs)
+    plt.plot(x_segment, reqs)
+    plt.xlabel('number of segments')
+    plt.ylabel('req')
+    plt.title('')
+    plt.legend()
+    plt.show()
 
-# Press the green button in the gutter to run the script.
+
+def de_tester1():
+    for d in [8, 16, 32, 64]:
+        it = list(DifferentialEvolution.differential_evolution_debug
+                  (lambda x: sum(x ** 2) / d, [(-100, 100)] * d, iterations=3000))
+        x, f = zip(*it)
+        plt.plot(f, label='d={}'.format(d))
+    plt.xlabel('iterations')
+    plt.ylabel('function')
+    plt.legend()
+    plt.show()
 
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+def de_tester2():
+    y = np.array([0.00000000e+00, 9.69801700e-03, 2.94350340e-02,
+                  4.39052750e-02, 5.45343950e-02, 6.74104940e-02,
+                  8.34831790e-02, 1.02580042e-01, 1.22767939e-01,
+                  1.42172312e-01, 0.00000000e+00, 8.58600000e-06,
+                  8.31543400e-03, 2.34184100e-02, 3.39709150e-02,
+                  4.03581990e-02, 4.53545600e-02, 5.02345260e-02,
+                  5.55253360e-02, 6.14750770e-02, 6.82125120e-02,
+                  7.55892510e-02, 8.38356810e-02, 9.26413070e-02,
+                  1.02039790e-01, 1.11688258e-01, 1.21390666e-01,
+                  1.31196948e-01, 0.00000000e+00, 1.56706510e-02,
+                  3.54628780e-02, 4.63739040e-02, 5.61442590e-02,
+                  6.78542550e-02, 8.16388310e-02, 9.77756110e-02,
+                  1.16531753e-01, 1.37038283e-01, 0.00000000e+00,
+                  1.16951050e-02, 3.12089850e-02, 4.41776550e-02,
+                  5.42877590e-02, 6.63321350e-02, 8.07655920e-02,
+                  9.70363280e-02, 1.15706975e-01, 1.36687642e-01,
+                  0.00000000e+00, 1.50144640e-02, 3.44519970e-02,
+                  4.55907760e-02, 5.59556700e-02, 6.88450940e-02,
+                  8.41374060e-02, 1.01254006e-01, 1.20605073e-01,
+                  1.41881288e-01, 1.62618058e-01])
+    x = np.array([0.00000000e+00, 8.82678000e-03, 3.25615100e-02,
+                  5.66106800e-02, 7.95549800e-02, 1.00936330e-01,
+                  1.20351520e-01, 1.37442010e-01, 1.51858250e-01,
+                  1.64433570e-01, 0.00000000e+00, -2.12600000e-05,
+                  7.03872000e-03, 1.85494500e-02, 3.00926700e-02,
+                  4.17617000e-02, 5.37279600e-02, 6.54941000e-02,
+                  7.68092100e-02, 8.76596300e-02, 9.80525800e-02,
+                  1.07961810e-01, 1.17305210e-01, 1.26063930e-01,
+                  1.34180360e-01, 1.41725010e-01, 1.48629710e-01,
+                  1.55374770e-01, 0.00000000e+00, 1.65610200e-02,
+                  3.91016100e-02, 6.18679400e-02, 8.30997400e-02,
+                  1.02132890e-01, 1.19011260e-01, 1.34620080e-01,
+                  1.49429370e-01, 1.63539960e-01, -0.00000000e+00,
+                  1.01980300e-02, 3.28642800e-02, 5.59461900e-02,
+                  7.81388400e-02, 9.84458400e-02, 1.16270210e-01,
+                  1.31279040e-01, 1.45437090e-01, 1.59627540e-01,
+                  0.00000000e+00, 1.63404300e-02, 4.00086000e-02,
+                  6.34390200e-02, 8.51085900e-02, 1.04787860e-01,
+                  1.22120350e-01, 1.36931660e-01, 1.50958760e-01,
+                  1.65299640e-01, 1.79942720e-01])
+    model = PLR(x, y)
+    max_segment = 9
+    reqs = []
+    for i in range(3, max_segment):
+        model.fit_debug(i)
+        reqs.append(model.r_squared())
+    print(reqs)
+    plt.xlabel('number of iterations')
+    plt.ylabel('ss_res')
+    plt.title('')
+    plt.legend()
+    plt.show()
+
+
+def de_tester3():
+    x = np.linspace(0, 10, 500)
+    y = np.cos(x) + np.random.normal(0, 0.2, 500)
+    model = PLR(x, y)
+    max_segment = 15
+    reqs = []
+    for i in range(3, max_segment):
+        model.fit(i)
+        reqs.append(model.r_squared())
+        plt.plot(model.x_data, model.predict(x), label='segment ' + str(i))
+    plt.figure()
+    reqs = np.array(reqs)
+    print(reqs)
+    plt.plot(x, y, 'o', label='raw data')
+    plt.xlabel('x')
+    plt.ylabel('y')
+    plt.title('cosx linear regression')
+    plt.legend()
+    plt.show()
+
+
+def application():
+    lg = bs.login()
+    # 显示登陆返回信息
+    print('login respond error_code:' + lg.error_code)
+    print('login respond  error_msg:' + lg.error_msg)
+    rs = bs.query_history_k_data("000001.SH",
+                                 "date,code,open,high,low,close,preclose,volume,amount,adjustflag,turn,tradestatus,"
+                                 "pctChg,peTTM,pbMRQ,psTTM,pcfNcfTTM,isST",
+                                 start_date='2016-01-01', end_date='2021-12-9', frequency="d", adjustflag="3")
+    print('query_history_k_data respond error_code:' + rs.error_code)
+    print('query_history_k_data respond  error_msg:' + rs.error_msg)
+    data_list = []
+    while (rs.error_code == '0') & rs.next():  # 获取一条记录，将记录合并在一起
+        data_list.append(rs.get_row_data())
+    result = pd.DataFrame(data_list, columns=rs.fields)
+    result.to_csv("./data/history_A_stock_k_data.csv", index=False)
+    print(result)
+
+    bs.logout()
+
+
+# application()
+
+
+def app_plr():
+    data = pd.read_csv("./data/history_A_stock_k_data.csv")
+    x = data[['date', 'close']]
+    x_data = x.values
+    x_data = np.array(x_data)
+    data_pre = [np.zeros(len(x_data)), np.zeros(len(x_data))]
+    for i in range(len(x_data)):
+        data_pre[0][i] = int(x_data[0][0].replace('-', '')) + i / (int(x_data[-1][0].replace('-', ''))
+                                                                   - int(x_data[0][0].replace('-', '')))
+        data_pre[1][i] = x_data[i][1]
+    plt.figure(figsize=(16, 6), dpi=100)
+    plt.plot(data_pre[0], data_pre[1], '-', label='raw data', markersize=2, )
+    model = PLR(data_pre[0], data_pre[1])
+    max_segments = 22
+    min_segments = 5
+    req = []
+    ss_res = []
+    for i in range(min_segments, max_segments, 5):
+        model.fit(i)
+        plt.plot(data_pre[0], model.predict(data_pre[0]), '-', label='segments ' + str(i))
+        req.append(model.r_squared())
+        ss_res.append(model.ss_res)
+    print(req)
+    print(ss_res)
+    plt.xlabel('date')
+    plt.ylabel('close value')
+    plt.title('stock linear regression')
+    plt.legend()
+    plt.show()
+
+
+if __name__ == '__main__':
+    simple_plr_tester1()
+    # plr_tester1()
+    # plr_tester2()
+    # de_tester1()
+    # de_tester2()
+    # de_tester3()
+    # application()
+    # app_plr()

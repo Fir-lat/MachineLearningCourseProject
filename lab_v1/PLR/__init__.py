@@ -1,36 +1,92 @@
 import numpy as np
-from scipy import optimize
+from numpy import linalg
 import matplotlib.pyplot as plt
+from DifferentialEvolution.__init__ import DifferentialEvolution
+from simplePLR.__init__ import SimplePLR
 
 
-def haha():
-    print("haha")
+class PLR(SimplePLR):
 
+    def __init__(self, x, y):
+        super().__init__(x, y)
 
-x = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], dtype=float)
-y = np.array([5, 7, 9, 11, 13, 15, 28.92, 42.81, 56.7, 70.59,
-              84.47, 98.36, 102.25, 106.14, 110.03])
+    def regression_matrix(self, breaks, x):
+        return super().regression_matrix(breaks, x)
 
+    def simple_plr_v1(self, breaks):
+        return super().simple_plr_v1(breaks)
 
-# 一个输入序列，4个未知参数，2个分段函数
-def piecewise_linear(x, x0, y0, k1, k2):
-    # x<x0 ⇒ lambda x: k1*x + y0 - k1*x0
-    # x>=x0 ⇒ lambda x: k2*x + y0 - k2*x0
-    return np.piecewise(x, [x < x0, x >= x0], [lambda x: k1 * x + y0 - k1 * x0,
-                                               lambda x: k2 * x + y0 - k2 * x0])
+    def predict(self, x):
+        return super().predict(x)
 
+    def calculate_slopes(self):
+        super().calculate_slopes()
 
-def piecewise_linear3(x, x0, x1, y0, y1, k0, k1):
-    return np.piecewise(x, [x <= x0, np.logical_and(x0 < x, x <= x1), x > x1],
-                        [lambda x: k0 * (x - x0) + y0,  # 根据点斜式构建函数
-                         lambda x: (x - x0) * (y1 - y0) / (x1 - x0) + y0,  # 根据两点式构建函数
-                         lambda x: k1 * (x - x1) + y1])
+    def standard_errors(self, method='linear', step_size=1e-4):
+        super().standard_errors(method, step_size)
 
+    def r_squared(self):
+        return super().r_squared()
 
-# 用已有的 (x, y) 去拟合 piecewise_linear 分段函数
-p, e = optimize.curve_fit(piecewise_linear3, x, y, bounds=(0, [6, 13, 20, 120, 4, 6]))
+    def linear_regression(self, A):
+        return super().linear_regression(A)
 
-xd = np.linspace(0, 15, 200)
-plt.plot(x, y, "o")
-plt.plot(xd, piecewise_linear3(xd, *p))
-plt.show()
+    def plot(self):
+        super().plot()
+
+    def simple_plr(self, mid_breaks):
+        mid_breaks = np.sort(mid_breaks)
+        breaks = np.zeros(len(mid_breaks) + 2)
+        breaks[0], breaks[1:-1], breaks[-1] = self.break_0, mid_breaks, self.break_n
+        A = self.regression_matrix(breaks, self.x_data)
+
+        # 求解线性回归
+        self.ss_res = self.linear_regression(A)
+        return self.ss_res
+
+    def fit(self, n_segments):
+        self.segments = int(n_segments)
+        self.parameters = self.segments + 1
+
+        # 计算断点的域，为[break_0,break_n]
+        bounds = np.zeros((self.segments - 1, 2))
+        bounds[:, 0] = self.break_0
+        bounds[:, 1] = self.break_n
+
+        # 差分进化算法
+        result = DifferentialEvolution.differential_evolution(self.simple_plr, bounds)
+        self.ss_res = result[1]
+        mid_breaks = np.sort(result[0])
+        self.breakpoints = np.zeros(len(mid_breaks) + 2)
+        self.breakpoints[0], self.breakpoints[1:-1], self.breakpoints[-1] = self.break_0, mid_breaks, self.break_n
+
+        #
+        self.simple_plr_v1(self.breakpoints)
+
+        return self.breakpoints
+
+    def fit_debug(self, n_segments):
+        self.segments = int(n_segments)
+        self.parameters = self.segments + 1
+
+        # 计算断点的域，为[break_0,break_n]
+        bounds =    np.zeros((self.segments - 1, 2))
+        bounds[:, 0] = self.break_0
+        bounds[:, 1] = self.break_n
+
+        # 差分进化算法
+        result_list = list(DifferentialEvolution.differential_evolution_debug
+                           (self.simple_plr, bounds, iterations=3000))
+        x, f = zip(*result_list)
+        plt.plot(f, label='segments={}'.format(n_segments))
+
+        self.ss_res = result_list[-1][1]
+        mid_breaks = np.sort(result_list[-1][0])
+        self.breakpoints = np.zeros(len(mid_breaks) + 2)
+        self.breakpoints[0], self.breakpoints[1:-1], self.breakpoints[-1] = self.break_0, mid_breaks, self.break_n
+
+        #
+        self.simple_plr_v1(self.breakpoints)
+
+        return self.breakpoints
+

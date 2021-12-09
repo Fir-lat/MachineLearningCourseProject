@@ -1,18 +1,205 @@
 
 \section{算法设计}
-\subsection{环境}
+
+综合来讲，我们需要解决的问题分为三个步骤：
+
+\begin{enumerate}[\quad ·]
+    \item 确定断点$(breakpoints)$的数目；
+    \item 确定各断点的位置（已知第一个断点和最后一个断点分别为$x_1$和$x_n$）；
+    \item 通过断点对数据集进行分段线性规划。
+\end{enumerate}
+
+根据我之前的分析，这三个子问题中，第一个子问题难度最大，学界至今没有得出一个令所有人都信服的算法；而对于第二个子问题，根据先前的描述，可以通过使用差分进化算法来找到全局最优的断点位置，进而将问题归约为第三个子问题；第三个子问题最为简单，仅需将数据集划分为多段，并在多段上面使用最小二乘法即可。
+
+根据子问题难度，接下来行文依据子问题倒序进行，方便读者渐进了解多段线性回归的解题思想。
+
+\subsection{已知断点位置的多段线性回归 \label{p1}}
+
+首先，我们要明确，我们需要找到一条连续的分段线性函数。在实际应用中，出现情况最多的也是连续的分段线性函数；同时，设定这个要求也有我的一个私心，不连续的分段线性函数对我来说不够优雅（LOL）。假设我们有一个大小为$n$一维数据集，其中$x$为自变量，$y$为因变量。我们的可以将数据集表示为以下这种形式：
+
+\[\begin{bmatrix}
+    x_1 \quad y_1 \\
+    x_2 \quad y_2 \\
+    x_3 \quad y_3 \\
+    \vdots \quad \vdots \\
+    x_n \quad y_n \\
+    \end{bmatrix}\]
+
+同时，为了后续讨论方便，这里假设数据集已经根据$x_i$排好序了。在数据集中，我们假设$x_1 < x_2 < x_3 < x_4 < \cdots < x_n$。注意没有$x_i = x_j$的情况，这也是为了后续讨论方便。因为如果两数据自变量相等，且恰好断点在该处，则在回归过程中无法得到一条连续的多段线性函数。但是真实数据集中无法避免出现自变量相等的情况，那么我们有以下解决办法:
+
+\begin{enumerate}[\quad ·]
+    \item 对于两个自变量相等的点，随机删去其中一个。当然，这可能也会以引发一些其他的问题，比如使得数据集出现类别不平衡$(class-imbalance)$的问题；
+    \item 对于自变量相等的点，我们将其归约为一个数据点，数据点的因变量为这些点因变量的平均值，即$y' = \frac{1}{m} \cdot \sum _{i=1}^{m} y_i$，这样做也会造成问题，如果实际数据集对应的斜率很大或实际数据集本身就是分段的线性回归，则这种操作相当于人为的将数据集强制转换成了连续的线性分段函数；
+    \item 将自变量相等的点的自变量加上一个随机的偏移量，强行使得所有的点的自变量都不相同，这种是最无脑的。
+\end{enumerate}
+
+以上问题解决办法还有很多，实际问题中根据需求具体选择即可。
+
+接下来继续讨论该子问题。当我们将数据集根据自变量$x$排好序，且已知断点位置的情况下，我们最终解的形式应该如下所示\cite{ref8}：
+
+\[\mathbf{y}(x) = \begin{cases}
+    \eta _1 + \beta _1(x-b_1) \quad b_1 < x \leq b_2 \\
+    \eta _2 + \beta _2(x-b_2) \quad b_2 < x \leq b_3 \\
+    \vdots \quad \vdots \\
+    \eta_n + \beta_{n_b}(x-b_{n_b-1}) \quad b_{n-1} < x \leq b_{n_b} \\
+\end{cases}\]
+
+其中，断点为$b_1 > b_2 < \cdots > b_{n_b}$，总共有$n_b$个断点，且已经排好序。先前已经提到，其中$b_1 = x_1$，且$b_{n_b} = x_n$。那么问题已经可以得到很好的解决了，只需对每一个分段使用最小二乘法即可。接下来介绍一种处理方法，可以只通过一次最小二乘法即可得到结果。
+
+首先，我们对解的形式进行以下变换：
+
+\[\mathbf{y}(x) = \begin{cases}
+    \beta_1 + \beta_2(x-b_1) \quad b_1 \leq x \leq b_2 \\
+    \beta_1 + \beta_2(x-b_1) + \beta_3(x-b_2) \quad b_2 < x \leq b_3 \\
+    \vdots \quad \vdots \\
+    \beta_1 + \beta_2(x-b_1) + \beta_3(x-b_2) + \cdots + \beta_{n_b+1}(x-b_{n_b-1}) \quad b_{n-1} < x \leq b_{n_b} \\
+\end{cases}\]
+
+为什么可以进行以上变换呢，因为我们考虑的是连续的线性回归问题，对于每一段线性函数，我们都可以看作其是在前一个线性函数的基础上加上一个线性函数（该线性函数的系数可以是负数）。例如，对于式中的第二段线性函数$y(x)=\beta_1 + \beta_2(x-b_1) + \beta_3(x-b_2) \quad b_2 < x \leq b_3$，我们可以看作其在第一段线性函数$y(x)=\beta_1 + \beta_2(x-b_1) \quad b_1 \leq x \leq b_2$的基础上加上一个$y(x)=\beta _3(x-b_2) b_2 \leq x \leq b_3$的线性函数。依此类推，得到解的另一种形式。
+
+进一步，我们可以将该解写成矩阵乘的形式，如下所示：
+
+\[\begin{bmatrix}
+    1 \quad x_1-b_1 \quad (x_1-b_2)s_{x_1 > b_2} \quad (x_1-b_3)s_{x_1 > b_3} \quad \cdots \quad (x_1-b_{n_b-1})s_{x_1 > b_{n_b-1}} \\
+    1 \quad x_2-b_1 \quad (x_2-b_2)s_{x_2 > b_2} \quad (x_2-b_3)s_{x_2 > b_3} \quad \cdots \quad (x_2-b_{n_b-1})s_{x_2 > b_{n_b-1}} \\
+    \vdots \quad \quad \vdots \quad\quad \vdots \quad\quad \vdots \quad \quad \vdots \quad \quad \vdots \\
+    1 \quad x_n-b_1 \quad (x_n-b_2)s_{x_n > b_2} \quad (x_n-b_3)s_{x_n > b_3} \quad \cdots \quad (x_n-b_{n_b-1})s_{x_n > b_{n_b-1}} \\
+    \end{bmatrix} \begin{bmatrix}
+    \beta_1 \\
+    \beta_2 \\
+    \vdots \\
+    \beta_{n_b}
+    \end{bmatrix} = \begin{bmatrix}
+    y_1 \\
+    y_2 \\
+    \vdots \\
+    y_n
+    \end{bmatrix}\]
+
+其中，$s_{x_i > b_j}$函数定义为以下的形式：
+
+\[s_{x_i > b_j} = \begin{cases}
+    0 \quad x \leq b_j \\
+    1 \quad x > b_j    
+\end{cases}\]
+
+至此，已知断点位置的多段线行回归问题即将解决。通过函数$s_{x_i > b_j}$的转换，式中的回归矩阵可以被转换为下三角矩阵，利于后续的矩阵计算。而求解该问题可以使用$NumPy$中的最小二乘求解器$numpy\quad lstsq$完成矩阵的运算\cite{ref6}。
+
+上述等式可以表示为以下形式\cite{ref7}：
+
+\[\mathbf{A\beta} = \mathbf{y}\]
+
+因此，解的形式为：
+
+\[\mathbf{\beta} = (\mathbf{A^T}\mathbf{A})^{-1}\mathbf{A^T}\mathbf{y}\]
+
+因此数据集的残差可以表示为：
+
+\[\mathbf{e}=\mathbf{A\beta} -\mathbf{y}\]
+
+其中，$\mathbf{e}$为$n$维向量，因此残差平方和$(residual~sum~of~squares)$为：
+
+\[SS_{res} = \mathbf{e^Te}\]
+
+接下来根据多段线性回归的特点，简要介绍和修正一些用于评估模型的参数。首先是因变量总平方和为：
+
+\[SS_{tot} = \sum\limits _{i=1}^{n}(y_i - \bar{y})^2\]
+
+\[\bar{y} = \frac{1}{n}\sum\limits _{i=1}^{n}y_i\]
+
+因此，判定系数为：
+
+\[\mathbf{R^2}=1-\frac{SS_{res}}{SS_{tot}}\]
+
+已知样本量$n$和断点个数$n_b$，残差平方和的无偏估计为：
+
+\[\hat{\sigma}^2=\frac{SS_{res}}{n-n_b}\]
+
+因此，假设数服从正态分布，则对于每个$\beta _i$，其中$1 \leq i \leq n_b$，其标准差为：
+
+\[SE(\beta_i)=\sqrt{\hat{\sigma}^2[A^TA]_{ii}^{-1}}\]
+
+\subsection{已知断点数目的多段线性回归\label{p2}}
+
+接下来介绍已知断点数目的多段线性回归。根据\nameref{p1}的介绍，如果我们能够在合理时间复杂度内找到最佳位置，就可以将已知断点数目的多段线性回归归约到已知断点位置的多段线性回归问题。首先，我们给出已知断点数目的多段线性回归问题的具体描述：
+
+\[\begin{aligned}
+given~b_i,1 \leq i \leq n_b,x_1 \leq b_i \leq x_n(b_1=x_1,b_{n_b} = x_n)
+\\
+minimize~SS_{res}(\mathbf{b}),\mathbf{b}=[b_2,b_3,\cdots,b_{n_b-1}]^T
+\end{aligned}\]
+
+接下来介绍找出全局最优解的算法——差分进化算法\cite{ref1}（Differential Evolution Algorithm）。差分进化算法是Rainer Storn和Kenneth Price在1997年提出的启发式算法，后续在各种竞赛中都被证明是目前收敛最快的进化算法。在随后的20多年中，差分进化算法得到了不断地优化，并衍生出多种变体。本次实验中仅采用最经典的差分进化算法。接下来简要介绍差分进化算法流程。
+
+\subsubsection{创建种群}
+
+首先需要设置种群的初始数量，一般设置为$10$到$20$，设为$popsize(population~size)$。随后，生成$popsize$个$(0,1)$的$d$维随机数（其中$d$为自变量的维数），然后再将将随机数映射到自变量的域。这样我们就得到了$popsize$个初始种群。接下来使用需要被优化的函数来评价这个种群，即使用该函数计算得到每个个体的值。得到每个个体的值后，我们就可以从中找出我们最需要的那个个体（本实验中，因为要最小化，所以我们找出具有最小值的个体即可）。
+
+\subsubsection{种群突变}
+
+在现有种群中找到最优的那个个体之后，我们就可以进行突变$(mutation)$了。在剩余的种群里选择三个个体作为突变源，不妨记作$a,b,c$。突变的核心操作是，根据$b,c$的差异来改变$a$的值，即将$b,c$的差异乘以突变因子（一般为$[0.5,2.0]$，突变因子过大或过小可能会减慢收敛速度），再加上$a$的原始数据就得到了一个新的个体。突变后的新个体的各维变量可能超过自变量的域，所以还要将新值归约到自变量的域中。
+
+\subsubsection{种群重组}
+
+接下来就是用新的个体中的数据替换当前最优个体中的某些数据，以期达到进化的目的。对于每一维变量，其重组的概率均为一个值，这个值一般设定为$0.7$，可根据变量维数大小做相应调整。最终的重组结果也遵循二项式分布。
+
+\subsubsection{种群替代}
+
+得到重组个体之后，我们就可以使用待优化函数来对新个体进行评估。如果该新个体的评价好于当前最优个体，就用该新个体替换它。当然，对于整个种群中的个体，只要新个体的评价高于该个体（本实验中，函数值更小），都会被替换。
 
 
-\subsection{系统功能需求}
+下面给出差分进化算法的伪代码：
+
+\begin{algorithm2e}
+    \caption{Differential Evolution}\label{algorithm}
+    \KwData{Population: $M$, Dimension $D$, Generation $T$}
+    \KwResult{The best vector (solution) $\Delta$}
+    $t\leftarrow 1(initialization)$\;
+    \For{$i=1~to~M$}
+    {\For{$j=1~to~D$}{$x_{i,t}^j=x_{min}^j+rand(0,1)\cdot (x_{max}^j-x_{min}^j)$\;}}
+    \While{$(|f(\Delta)|\geq \varepsilon)~or~(t\leq T)$}{
+        \For{$i=1~to~M$}{
+            $\rhd (Mutation~and~Crossover)$\;
+            \For{$j=1~to~D$}{
+                $v_{i,t}^j=Mutation(x_{i,t}^j)$\;
+                $u_{i,t}^j=Crossover(x_{i,t}^j,v_{i,t}^j)$\;
+            }
+            $\rhd (Greedy~Selection)$\;
+            \eIf{$f(\mathbf{u}_{i,t})<f(\mathbf{x}_{i,t})$}{
+                $\mathbf{x}_{i,t} \leftarrow \mathbf{u}_{i,t}$\;
+                \If{$f(\mathbf{x}_{i,t})<f(\Delta)$}{
+                    $\Delta \leftarrow \mathbf{x}_{i,j}$\;
+                }
+            }{
+                $\mathbf{x}_{i,t} \leftarrow \mathbf{x}_{i,t}$\;
+            }
+        }
+        $t \leftarrow t + 1$\;
+    }
+    $\mathbf{Return}~the~best~vector~\Delta$
+\end{algorithm2e}
+
+实现上述差分进化算法之后，我们就可以将$SS_{res}(\mathbf{b})$作为待优化的评价函数传入算法，并最终得到全局最优的$\mathbf{b}$。这里要提的是，差分进化算法找到全局最优解的开销随着维数的增加而指数性增加。也就是说，当我们断点数目增加，求解已知断点数目的分段线性回归问题的开销将呈指数增加。这一特性我们在接下的一节\nameref{p3}还会提到。
 
 
-\subsection{系统设计}
+\subsection{未知断点数目的多段线性回归\label{p3}}
+
+开宗明义，在题目给定的条件下，求解未知断点数的多段线性回归目前只有非常少的文献提及。且在实际查阅文献过程中，我也发现许多学者得到全局最优的断点数时，均进行了一定的假定或者对数据进行了一定的预处理。其中有通过将因变量和自变量组合成为$d+1$维的数据，将问题归约为面聚类问题再进行求解的\cite{ref5}；也有只识别单个输入特征，并在该特征上将样本分成互补区域，对每个区域局部拟合一个不同的线性回归函数的解决方案\cite{ref4}。总的来说，No Free Lunch定理提出，充分利用先验信息是提升学习性能的最有效途径之一；进一步来说，在本问题中，如果无法利用所有数据集的特征，我们将无法找出全局最优的断点数目。
+
+因为本人能力有限，暂时还未深刻理解这些方法的内涵。在此，我提出一种基于动态规划思想的可能可行的算法。这也是本学期算法课堂上同学首先贡献出来的思想精华，我只是进行一些修正和补充。
+
+对于数据集中的一个子集$A_{\mathbf{x}_i,\cdots,\mathbf{x}_{i+j}}=(\mathbf{X},\mathbf{Y})$，借鉴前面\ref{p1}的推导，我们可根据残差平方和度量子序列的损失：
+
+\[SS_{res}(A_{\mathbf{x}_i,\cdots,\mathbf{x}_{i+j}})=\mathbf{e^T}\mathbf{e}\]
+
+接下来用$f(i)$表示前$i$项数据分成若干段得到的最小损失（$f(0)$初始化为$0$），则动态规划的转移方程为：
+
+\[f(i)=\min\limits _{0\leq j<i}(f(j)+SS_{res}(A_{\mathbf{x}_{j+1},\cdots,\mathbf{x}_{i}})+c)\quad (1 \leq i \leq n)\]
+
+即，对于第$i$个数据点，考虑其分别和前面若干个结点组成一段线性函数（从$1$到$i-1$），再加上因为多处分段而出现的惩罚系数$c$。因为计算每个$f(i)$都需要遍历$f(j),j < i$，所以该动态规划算法的时间复杂是$O(n^2)$。对于每个$f(i)$的计算都可以记录对应的最优分段数。当算法运行完后，$f(n)$对应的分段数就是全局最优的分段数/。
+
+限于篇幅，这里就不再证明该算法的正确性。当然，最终实现的过程中，没有实现该算法，因为在\ref{p1}中已经将问题归约为单个多元线性回归问题，如果采用该算法来计算，则会增加额外的开销。因此，在最终实现的版本中，为了方便系统实现，我采用遍历枚举的方法取得局部最优的断点数。同时，该动态规划算法还需要引进惩罚系数$c$。确定惩罚系数本身的工作量也十分巨大，因此在最终实现的时候没有采用该算法。
+
+在\ref{p2}中也提到，在增加分段数的过程中，差分进化算法的开销将指数级增加。所以，我将分段数限制在一个合理范围内，而实际上分段数的所有取值有$n$中（考虑每一个数据点作为一个分段）。  
 
 
-\subsection{系统实现}
-
-
-\subsection{系统测试及结果说明}
-
-
-\subsection{其他需要说明的问题}
